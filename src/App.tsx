@@ -1,6 +1,8 @@
 import { AppBar, Box, Container, CssBaseline, Slide, Toolbar, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import './App.css';
+import { ProductList } from './core/products/presentation/components/ProductList';
+import ErrorNotification from './shared/feedback/ErrorNotification';
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -96,6 +98,8 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="xl" sx={{ py: 5, mt: 2 }}>
+        <ProductList />
+        <ErrorNotification />
       </Container>
     </>
   )

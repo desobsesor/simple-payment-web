@@ -5,18 +5,27 @@ import { useAuth } from '../../contexts/AuthContext';
 const api = axios.create({
     baseURL: config.API_URL,
     timeout: config.API_TIMEOUT,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
 });
 
 // Interceptor for JWT
+
+/*
 api.interceptors.request.use((cfg) => {
     const token = localStorage.getItem('token');
+    console.log('token: ', token);
     if (token) {
         cfg.headers.Authorization = `Bearer ${token}`;
     }
     return cfg;
 });
+*/
 
 // Interceptor for unauthorized responses
+/*
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -27,3 +36,6 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+*/
+
+export default api;
