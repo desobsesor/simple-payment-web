@@ -6,11 +6,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+#Dependencies directories
 node_modules
 dist
 dist-ssr
 *.local
+
+#Var that shouldn't be checked in
+.env
+.env.development
+.env.production
 
 package-lock.json
 

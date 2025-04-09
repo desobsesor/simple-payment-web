@@ -95,9 +95,7 @@ function App() {
           </Box>
         </Toolbar>
       </AppBar>
-
       <Container maxWidth="xl" sx={{ py: 5, mt: 2 }}>
-
       </Container>
     </>
   )
