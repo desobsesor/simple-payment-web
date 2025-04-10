@@ -1,12 +1,16 @@
 import { Product } from '../../domain/models/Product';
 import api from '../../../../shared/infrastructure/api';
+import { JwtService } from '../../../../shared/infrastructure/JwtService';
 
 export interface IProductService {
     getProducts(): Promise<Product[]>;
 }
 
 export class ProductService implements IProductService {
+    private jwtService: JwtService;
+
     constructor() {
+        this.jwtService = new JwtService();
     }
 
     /**
@@ -15,7 +19,7 @@ export class ProductService implements IProductService {
      * @param password
      * @returns token
      */
-    async login(): Promise<string> {
+    async login(): Promise<any> {
         const payload = {
             username: "yosuarezs",
             password: "Maya",
@@ -25,9 +29,11 @@ export class ProductService implements IProductService {
         try {
             const response = await api.post(`/v1/auth/login`, payload);
 
-            //Enter the token in the localstorage
             localStorage.setItem('token', response.data.access_token);
-            return response.data.access_token;
+            const user = await this.getUser(response.data.access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            return { user, token: response.data.access_token };
         } catch (error) {
             console.error('Login error:', error);
             throw new Error('Failed to login');
@@ -44,4 +50,9 @@ export class ProductService implements IProductService {
             throw new Error('Failed to fetch products');
         }
     }
+
+    private async getUser(token: string): Promise<any> {
+        return null;//this.jwtService.decode(token);
+    }
+
 }

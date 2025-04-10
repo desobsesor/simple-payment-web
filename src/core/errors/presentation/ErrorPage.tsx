@@ -1,6 +1,5 @@
-import { BusAlert } from '@mui/icons-material';
-import { Paper, Typography, Divider, List, ListItem, Button, Box, Stack, Container, ListItemIcon, ListItemText } from '@mui/material';
-import { FiberManualRecord } from '@mui/icons-material';
+import { ErrorOutlined, FiberManualRecord } from '@mui/icons-material';
+import { Box, Button, Container, Divider, List, ListItem, ListItemIcon, ListItemText, Paper, Stack, Typography } from '@mui/material';
 
 interface ErrorPageProps {
     error: string;
@@ -41,7 +40,7 @@ const ErrorPage = ({ error }: ErrorPageProps) => {
                             }
                         }}
                     >
-                        <BusAlert fontSize="large" />
+                        <ErrorOutlined fontSize="large" />
                     </Box>
 
                     <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
@@ -96,6 +95,15 @@ const ErrorPage = ({ error }: ErrorPageProps) => {
                             variant="contained"
                             fullWidth
                             color="primary"
+                            sx={{
+                                py: 1,
+                                bgcolor: '#2196f3',
+                                '&:hover': { bgcolor: '#1976d2' },
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 'bold',
+                                minWidth: '120px'
+                            }}
                             onClick={() => window.location.reload()}
                         >
                             Try again

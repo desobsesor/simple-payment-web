@@ -7,8 +7,10 @@ import ErrorPage from '../../../errors/presentation/ErrorPage';
 import { Product } from '../../domain/models/Product';
 import { ProductService } from '../../infrastructure/services/ProductService';
 import { PaymentCardModal } from './PaymentCardModal';
+import useUser from '../../../../contexts/UserContext';
 
 export const ProductList = () => {
+    const { setUser } = useUser();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -19,8 +21,12 @@ export const ProductList = () => {
     useEffect(() => {
         const productService = new ProductService();
         productService.login()
-            .then(() => {
-                console.log('Logged in successfully');
+            .then((data) => {
+                const { token, user } = data;
+                if (token) {
+                    console.log('Token:', token);
+                }
+                setUser(user)
             }).catch(err => {
                 console.error('Error logging in:', err);
             });
@@ -31,7 +37,7 @@ export const ProductList = () => {
                 // Initialize quantities with 1 for each product
                 const initialQuantities: { [key: string]: number } = {};
                 data.forEach(product => {
-                    initialQuantities[product.productId] = 1;
+                    initialQuantities[product.productId] = Number(product.productId);
                 });
                 setQuantities(initialQuantities);
                 setLoading(false);
@@ -47,7 +53,7 @@ export const ProductList = () => {
         <Grid container spacing={4} sx={{ paddingY: 4, maxWidth: '100%' }}>
             {[...Array(4)].map((_, index) => (
                 <Grid key={index}
-                    size={{ xs: 12, sm: 6, md: 3, lg: 3 }}
+                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     sx={{ width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' } }}>
                     <Card
                         component={motion.div}
@@ -194,7 +200,6 @@ export const ProductList = () => {
                                     height: '4.8em'
                                 }}>
                                     {product.description}
-                                    <Box component="span" sx={{ color: 'primary.main', fontWeight: 'medium', ml: 0.5 }}>More</Box>
                                 </Typography>
 
                                 <Stack direction="column" spacing={2} sx={{ mb: 3 }}>
@@ -264,6 +269,7 @@ export const ProductList = () => {
                     productName={selectedProduct.name}
                     amount={selectedProduct.price * (quantities[selectedProduct.productId] || 1)}
                     cant={quantities[selectedProduct.productId] || 1}
+                    productId={Number(quantities[selectedProduct.productId])}
                 />
             )}
         </>
