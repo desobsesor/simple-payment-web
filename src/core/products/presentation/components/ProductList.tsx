@@ -1,13 +1,15 @@
 import { Add as AddIcon, CameraAlt as CameraIcon, CreditCard as CreditCardIcon, InfoRounded, Inventory2Sharp, Remove as RemoveIcon } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, Grid, IconButton, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { QuantityEditPopover } from './QuantityEditPopover';
+import { Notification } from '../../../../shared/feedback/Notification';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import useUser from '../../../../contexts/UserContext';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
 import ErrorPage from '../../../errors/presentation/ErrorPage';
 import { Product } from '../../domain/models/Product';
 import { ProductService } from '../../infrastructure/services/ProductService';
 import { PaymentCardModal } from './PaymentCardModal';
-import useUser from '../../../../contexts/UserContext';
 
 export const ProductList = () => {
     const { setUser } = useUser();
@@ -17,6 +19,9 @@ export const ProductList = () => {
     const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [editingProductId, setEditingProductId] = useState<string>('');
+    const [notification, setNotification] = useState<{ open: boolean, message: string, severity: 'error' | 'warning' | 'info' | 'success' }>({ open: false, message: '', severity: 'error' });
 
     useEffect(() => {
         const productService = new ProductService();
@@ -101,7 +106,36 @@ export const ProductList = () => {
                 ...prev,
                 [productId]: newQuantity
             }));
+        } else if (newQuantity > product.stock) {
+            setNotification({
+                open: true,
+                message: `The quantity cannot be greater than the available stock(${product.stock} kg)`,
+                severity: 'error'
+            });
+        } else if (newQuantity < 1) {
+            setNotification({
+                open: true,
+                message: 'The quantity must be at least 1 kg',
+                severity: 'warning'
+            });
         }
+    };
+
+    const handleQuantityClick = (event: React.MouseEvent<HTMLElement>, productId: string) => {
+        setAnchorEl(event.currentTarget);
+        setEditingProductId(productId);
+        //setEditingQuantity(String(quantities[productId] || 1));
+    };
+
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+        setEditingProductId('');
+    };
+
+    // Quantity editing functionality has been moved to QuantityEditPopover component
+
+    const handleCloseNotification = () => {
+        setNotification(prev => ({ ...prev, open: false }));
     };
 
     return (
@@ -166,7 +200,15 @@ export const ProductList = () => {
                                         >
                                             <RemoveIcon fontSize="small" />
                                         </IconButton>
-                                        <Typography sx={{ mx: 2, fontWeight: 'bold' }}>
+                                        <Typography
+                                            sx={{
+                                                mx: 1,
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                '&:hover': { textDecoration: 'underline' }
+                                            }}
+                                            onClick={(e) => handleQuantityClick(e, product.productId)}
+                                        >
                                             {quantities[product.productId] || 1}Kg
                                         </Typography>
                                         <IconButton
@@ -188,6 +230,28 @@ export const ProductList = () => {
                                         {formatToLocalCurrency(product.price, 'es-CO')}
                                     </Typography>
                                 </Box>
+
+                                <QuantityEditPopover
+                                    open={Boolean(anchorEl) && editingProductId === product.productId}
+                                    anchorEl={anchorEl}
+                                    onClose={handlePopoverClose}
+                                    productId={product.productId}
+                                    stock={product.stock}
+                                    initialQuantity={quantities[product.productId] || 1}
+                                    onSubmit={(productId, quantity) => {
+                                        setQuantities(prev => ({
+                                            ...prev,
+                                            [productId]: quantity
+                                        }));
+                                    }}
+                                    onNotification={(message, severity) => {
+                                        setNotification({
+                                            open: true,
+                                            message,
+                                            severity
+                                        });
+                                    }}
+                                />
 
                                 <Typography variant="body2" color="text.secondary" sx={{
                                     mb: 2,
@@ -224,8 +288,8 @@ export const ProductList = () => {
                                             mr: 1.5,
                                             pt: 1
                                         }}>
-                                            <Box component="span" sx={{ fontSize: 18 }}>
-                                                <Inventory2Sharp fontSize="small" />
+                                            <Box component="span" sx={{ fontSize: 14 }}>
+                                                <Inventory2Sharp style={{ color: 'whitesmoke' }} fontSize="small" />
                                             </Box>
                                         </Box>
                                         <Box>
@@ -272,6 +336,15 @@ export const ProductList = () => {
                     productId={Number(quantities[selectedProduct.productId])}
                 />
             )}
+
+            <Notification
+                open={notification.open}
+                message={notification.message}
+                severity={notification.severity}
+                onClose={handleCloseNotification}
+                duration={4000}
+                position={{ vertical: 'top', horizontal: 'right' }}
+            />
         </>
     );
 

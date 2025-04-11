@@ -5,7 +5,12 @@ const ErrorNotification = () => {
     const { error, clearError } = useError();
 
     return (
-        <Snackbar open={!!error} autoHideDuration={6000} onClose={clearError}>
+        <Snackbar
+            open={!!error}
+            autoHideDuration={6000}
+            onClose={clearError}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
             <Alert severity="error">{error}</Alert>
         </Snackbar>
     );
