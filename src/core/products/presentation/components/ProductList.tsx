@@ -10,6 +10,8 @@ import ErrorPage from '../../../errors/presentation/ErrorPage';
 import { Product } from '../../domain/models/Product';
 import { ProductService } from '../../infrastructure/services/ProductService';
 import { PaymentCardModal } from './PaymentCardModal';
+import { ProductImageModal } from './ProductImageModal';
+import { ProductInfoModal } from './ProductInfoModal';
 
 export const ProductList = () => {
     const { setUser } = useUser();
@@ -18,6 +20,8 @@ export const ProductList = () => {
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [infoModalOpen, setInfoModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [editingProductId, setEditingProductId] = useState<string>('');
@@ -163,13 +167,27 @@ export const ProductList = () => {
                             }}
                         >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
-                                <IconButton size="small" sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}>
+                                <IconButton
+                                    size="small"
+                                    sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}
+                                    onClick={() => {
+                                        setSelectedProduct(product);
+                                        setInfoModalOpen(true);
+                                    }}
+                                >
                                     <InfoRounded fontSize="small" />
                                 </IconButton>
                                 <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                                     {product.name}
                                 </Typography>
-                                <IconButton size="small" sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}>
+                                <IconButton
+                                    size="small"
+                                    sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}
+                                    onClick={() => {
+                                        setSelectedProduct(product);
+                                        setImageModalOpen(true);
+                                    }}
+                                >
                                     <CameraIcon fontSize="small" />
                                 </IconButton>
                             </Box>
@@ -329,14 +347,31 @@ export const ProductList = () => {
             </Grid>
 
             {selectedProduct && (
-                <PaymentCardModal
-                    open={paymentModalOpen}
-                    onClose={() => setPaymentModalOpen(false)}
-                    productName={selectedProduct.name}
-                    amount={selectedProduct.price * (quantities[selectedProduct.productId] || 1)}
-                    cant={quantities[selectedProduct.productId] || 1}
-                    productId={Number(quantities[selectedProduct.productId])}
-                />
+                <>
+                    <PaymentCardModal
+                        open={paymentModalOpen}
+                        onClose={() => setPaymentModalOpen(false)}
+                        productName={selectedProduct.name}
+                        amount={selectedProduct.price * (quantities[selectedProduct.productId] || 1)}
+                        cant={quantities[selectedProduct.productId] || 1}
+                        productId={Number(quantities[selectedProduct.productId])}
+                    />
+                    <ProductImageModal
+                        open={imageModalOpen}
+                        onClose={() => setImageModalOpen(false)}
+                        productName={selectedProduct.name}
+                        imageUrl={selectedProduct.imageUrl}
+                    />
+                    <ProductInfoModal
+                        open={infoModalOpen}
+                        onClose={() => setInfoModalOpen(false)}
+                        productName={selectedProduct.name}
+                        productDescription={selectedProduct.description}
+                        productPrice={selectedProduct.price}
+                        productStock={selectedProduct.stock}
+                        imageUrl={selectedProduct.imageUrl}
+                    />
+                </>
             )}
 
             <Notification
