@@ -9,13 +9,18 @@ import {
     Modal,
     Paper,
     TextField,
-    Typography
+    Typography,
+    Divider
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import useUser from '../../../../contexts/UserContext';
+import usePaymentMethod from '../../../../contexts/PaymentMethodContext';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
 import { PaymentRequest, PaymentService } from '../../infrastructure/services/PaymentService';
 import { PaymentStatus, PaymentSummary } from './PaymentSummary';
+import { PaymentMethod } from '../../domain/models/PaymentMethod';
+import { PaymentMethodService } from '../../infrastructure/services/PaymentMethodService';
+import { SavedPaymentMethodList } from './SavedPaymentMethodList';
 interface PaymentCardModalProps {
     open: boolean;
     onClose: () => void;
@@ -41,6 +46,7 @@ interface PaymentResult {
 
 export const PaymentCardModal = ({ open, onClose, productName, amount, cant, productId }: PaymentCardModalProps) => {
     const { user } = useUser();
+    const { selectedPaymentMethod, setSelectedPaymentMethod } = usePaymentMethod();
     const [cardData, setCardData] = useState<CardData>({
         cardNumber: '1234567891122233',
         cardholderName: 'Yovany Suárez Silva',
@@ -53,13 +59,19 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentResult, setPaymentResult] = useState<PaymentResult>({ status: 'idle' });
     const [showPaymentForm, setShowPaymentForm] = useState(true);
+    const [showNewCardForm, setShowNewCardForm] = useState(false);
+    const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
+    const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
-    // Initialize payment service
+    // Initialize services
     const paymentService = new PaymentService();
+    const paymentMethodService = new PaymentMethodService();
 
     useEffect(() => {
         console.log('user in useEffect:', user);
         if (!open) {
+            // Reset form when modal closes
             setCardData({
                 cardNumber: '1234567891122233',
                 cardholderName: 'Yovany Suárez Silva',
@@ -71,8 +83,123 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
             setIsSubmitting(false);
             setPaymentResult({ status: 'idle' });
             setShowPaymentForm(true);
+            setShowNewCardForm(false);
+            setSelectedPaymentMethodId(null);
+        } else if (open && user?.userId) {
+            // Load saved payment methods when modal opens
+            loadSavedPaymentMethods();
         }
     }, [open, user]);
+
+    /**
+     * Loads saved payment methods for the user.
+     * If there are no valid methods, shows the new card form.
+     */
+    const loadSavedPaymentMethods = async () => {
+        if (!user?.userId) return;
+
+        setLoadingPaymentMethods(true);
+        try {
+            const methods = await paymentMethodService.getUserPaymentMethods(user.userId);
+
+            // Make sure there is always at least one payment method to display
+            // If there are no methods or there is an error, we use mock data
+            if (methods && methods.length > 0) {
+                setSavedPaymentMethods(methods);
+
+                // If there are valid methods, select the default one
+                const validMethods = methods.filter(m => !m.isExpired);
+                if (validMethods.length > 0) {
+                    const defaultMethod = validMethods.find(m => m.isDefault) || validMethods[0];
+                    setSelectedPaymentMethodId(defaultMethod.id);
+                    setShowNewCardForm(false);
+                } else {
+                    // If there are no valid methods, show new card form
+                    setShowNewCardForm(true);
+                }
+            } else {
+                // If there are no methods, use mock data
+                const mockMethods: PaymentMethod[] = [
+                    {
+                        id: 'pm_mock1',
+                        type: 'credit',
+                        cardNumber: '4111111111111111',
+                        lastFour: '1111',
+                        cardholderName: 'Yovany Suárez Silva',
+                        expiryMonth: '12',
+                        expiryYear: '25',
+                        brand: 'visa',
+                        isDefault: true,
+                        isExpired: false
+                    },
+                    {
+                        id: 'pm_mock2',
+                        type: 'credit',
+                        cardNumber: '5555555555554444',
+                        lastFour: '4444',
+                        cardholderName: 'Yovany Suárez Silva',
+                        expiryMonth: '10',
+                        expiryYear: '24',
+                        brand: 'mastercard',
+                        isDefault: false,
+                        isExpired: false
+                    },
+                    {
+                        id: 'pm_mock3',
+                        type: 'debit',
+                        cardNumber: '4111111111112222',
+                        lastFour: '2222',
+                        cardholderName: 'Yovany Suárez Silva',
+                        expiryMonth: '03',
+                        expiryYear: '23',
+                        brand: 'visa',
+                        isDefault: false,
+                        isExpired: true
+                    }
+                ];
+
+                setSavedPaymentMethods(mockMethods);
+                setSelectedPaymentMethodId('pm_mock1');
+                setShowNewCardForm(false);
+            }
+        } catch (error) {
+            console.error('Error loading payment methods:', error);
+
+            // If there is an error, use mock data
+            const mockMethods: PaymentMethod[] = [
+                {
+                    id: 'pm_mock1',
+                    type: 'credit',
+                    cardNumber: '4111111111111111',
+                    lastFour: '1111',
+                    cardholderName: 'Yovany Suárez Silva',
+                    expiryMonth: '12',
+                    expiryYear: '25',
+                    brand: 'visa',
+                    isDefault: true,
+                    isExpired: false
+                },
+                {
+                    id: 'pm_mock2',
+                    type: 'credit',
+                    cardNumber: '5555555555554444',
+                    lastFour: '4444',
+                    cardholderName: 'Yovany Suárez Silva',
+                    expiryMonth: '10',
+                    expiryYear: '24',
+                    brand: 'mastercard',
+                    isDefault: false,
+                    isExpired: false
+                }
+            ];
+
+            setSavedPaymentMethods(mockMethods);
+            setSelectedPaymentMethodId('pm_mock1');
+            setShowNewCardForm(false);
+        } finally {
+            setLoadingPaymentMethods(false);
+        }
+    };
 
     const handleChange = (field: keyof CardData) => (event: React.ChangeEvent<HTMLInputElement>) => {
         let value = event.target.value;
@@ -192,14 +319,85 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                 console.error('Payment error:', error);
                 setPaymentResult({
                     status: 'rejected',
-                    errorMessage: 'Error al procesar el pago. Por favor intente nuevamente.'
+                    errorMessage: 'Error processing payment. Please try again.'
                 });
                 setIsSubmitting(false);
             }
         }
     };
 
-    // Function to check status of pending payments
+    /**
+     * Handles the payment with a saved payment method.
+     */
+    const handlePayWithSavedMethod = async () => {
+        if (!selectedPaymentMethodId || !user?.userId) return;
+
+        setIsSubmitting(true);
+        setPaymentResult({ status: 'processing' });
+        setShowPaymentForm(false);
+
+        try {
+            // Process payment with saved method
+            const response = await paymentMethodService.processPaymentWithSavedMethod(
+                selectedPaymentMethodId,
+                amount,
+                productId,
+                cant,
+                user.userId
+            );
+
+            // Update payment result
+            setPaymentResult({
+                status: 'approved',//response.status, //NOTE: this is a mock response
+                transactionId: response.transactionId,
+                errorMessage: response.errorMessage
+            });
+
+            // If payment is pending, check status after a delay
+            if (response.status === 'pending' && response.transactionId) {
+                checkPendingPayment(response.transactionId);
+            }
+
+            setIsSubmitting(false);
+
+            // Only close modal automatically if payment is approved
+            if (response.status === 'approved') {
+                setTimeout(() => onClose(), 3000);
+            }
+        } catch (error) {
+            console.error('Payment error with saved method:', error);
+            setPaymentResult({
+                status: 'rejected',
+                errorMessage: 'Error al procesar el pago. Por favor intente nuevamente.'
+            });
+            setIsSubmitting(false);
+        }
+    };
+
+    /**
+     * Handles adding a new payment method.
+     */
+    const handleAddNewCard = () => {
+        setShowNewCardForm(true);
+        setSelectedPaymentMethodId(null);
+        // Clear the selected payment method in the context
+        setSelectedPaymentMethod(null);
+    };
+
+    // Handle selecting a saved payment method
+    const handleSelectPaymentMethod = (paymentMethodId: string) => {
+        setSelectedPaymentMethodId(paymentMethodId);
+        setShowNewCardForm(false);
+
+        // Update the selected payment method in the context
+        const selectedMethod = savedPaymentMethods.find(method => method.id === paymentMethodId) || null;
+        setSelectedPaymentMethod(selectedMethod);
+    };
+
+    /**
+     * Checks the status of a pending payment after a delay.
+     * @param transactionId The ID of the pending payment transaction.
+     */
     const checkPendingPayment = async (transactionId: string) => {
         try {
             // Wait 3 seconds before checking
@@ -227,9 +425,22 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
         }
     };
 
+    /**
+     * Formats the display card number.
+     * If there is a selected payment method and we are showing saved methods,
+     * it uses the data from the selected payment method. Otherwise, it uses the form data.
+     * @returns The formatted card number.
+     */
     const formatDisplayCardNumber = () => {
-        const digits = cardData.cardNumber.replace(/\s/g, '');
-        return digits.padEnd(16, '•').replace(/(.{4})/g, '$1 ').trim();
+        // If there is a selected payment method and we are showing saved methods, use that data
+        if (selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0) {
+            const digits = selectedPaymentMethod.cardNumber.replace(/\s/g, '');
+            return digits.padEnd(16, '•').replace(/(.{4})/g, '$1 ').trim();
+        } else {
+            // If not, use the form data
+            const digits = cardData.cardNumber.replace(/\s/g, '');
+            return digits.padEnd(16, '•').replace(/(.{4})/g, '$1 ').trim();
+        }
     };
 
     return (
@@ -251,9 +462,11 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                     boxShadow: 24,
                     p: 3,
                     outline: 'none',
+                    maxHeight: '90vh',
+                    overflowY: 'auto'
                 }}>
                     <Typography id="payment-modal-title" variant="h6" component="h2" align="center" gutterBottom>
-                        {showPaymentForm ? 'Pago con Tarjeta de Crédito' : 'Resumen de Pago'}
+                        {showPaymentForm ? 'Credit Card Payment' : 'Payment Summary'}
                     </Typography>
                     <Typography
                         sx={{
@@ -270,10 +483,53 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                         align="center"
                         gutterBottom
                     >
-                        <Label style={{ fontWeight: 'bold', verticalAlign: 'middle' }} /> {productName}, Cant: {cant}, Total: {formatToLocalCurrency(amount, 'es-CO')}
+                        <Label style={{ fontWeight: 'bold', verticalAlign: 'middle' }} /> {productName}, Qty: {cant}, Total: {formatToLocalCurrency(amount, 'en-US')}
                     </Typography>
 
-                    {showPaymentForm ? (
+                    {/* Show payment methods section when showing payment form */}
+                    {showPaymentForm && (
+                        <>
+                            {/* Show saved payment methods if available and not showing new card form */}
+                            {savedPaymentMethods.length > 0 && !showNewCardForm && (
+                                <>
+                                    <SavedPaymentMethodList
+                                        paymentMethods={savedPaymentMethods}
+                                        selectedPaymentMethodId={selectedPaymentMethodId}
+                                        onSelectPaymentMethod={handleSelectPaymentMethod}
+                                        onAddNewCard={handleAddNewCard}
+                                    />
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5, mb: 0.5 }}>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handlePayWithSavedMethod}
+                                            disabled={!selectedPaymentMethodId || isSubmitting}
+                                            sx={{
+                                                py: 1,
+                                                bgcolor: '#2196f3',
+                                                '&:hover': { bgcolor: '#1976d2' },
+                                                borderRadius: 2,
+                                                textTransform: 'none',
+                                                fontWeight: 'bold',
+                                                minWidth: '180px'
+                                            }}
+                                        >
+                                            {isSubmitting ? 'Processing...' : 'PAY WITH THIS CARD'}
+                                        </Button>
+                                    </Box>
+
+                                    <Divider sx={{ my: 0.5 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            or use a new card
+                                        </Typography>
+                                    </Divider>
+                                </>
+                            )}
+                        </>
+                    )}
+
+                    {/* Show card visual when in payment form and not showing new card form */}
+                    {showPaymentForm && !showNewCardForm ? (
                         <Paper
                             elevation={3}
                             sx={{
@@ -313,18 +569,25 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                     <Typography variant="body2" sx={{ textTransform: 'uppercase', opacity: 0.8 }}>
-                                        {cardData.cardholderName || 'CARDHOLDER NAME'}
+                                        {selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0
+                                            ? selectedPaymentMethod.cardholderName
+                                            : (cardData.cardholderName || 'CARDHOLDER NAME')}
                                     </Typography>
                                     <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                                        {cardData.expiryMonth ? cardData.expiryMonth.padStart(2, '0') : 'MM'}/
-                                        {cardData.expiryYear || 'YY'}
+                                        {selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0
+                                            ? `${selectedPaymentMethod.expiryMonth}/${selectedPaymentMethod.expiryYear}`
+                                            : `${cardData.expiryMonth ? cardData.expiryMonth.padStart(2, '0') : 'MM'}/${cardData.expiryYear || 'YY'}`}
                                     </Typography>
                                 </Box>
                             </Box>
 
                             <Box
                                 component="img"
-                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png"
+                                src={selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0
+                                    ? (selectedPaymentMethod.brand === 'visa'
+                                        ? "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png"
+                                        : "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png")
+                                    : "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png"}
                                 alt="chip"
                                 sx={{
                                     position: 'absolute',
@@ -335,23 +598,21 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                     objectFit: 'contain',
                                 }}
                             />
-                        </Paper>
-                    ) : (
-                        <PaymentSummary
+                        </Paper>) : (!showPaymentForm && <PaymentSummary
                             status={paymentResult.status}
                             transactionId={paymentResult.transactionId}
                             errorMessage={paymentResult.errorMessage}
-                        />
-                    )}
+                        />)}
 
-                    {showPaymentForm ? (
+                    {/* Show new card form when in payment form and either showNewCardForm is true or there are no saved methods */}
+                    {showPaymentForm && (showNewCardForm || savedPaymentMethods.length === 0) ? (
                         <Box component="form" onSubmit={handleSubmit}>
                             <Grid container spacing={2}>
                                 <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
                                     <Box sx={{ gap: 2 }}>
                                         <TextField
                                             style={{ width: '100%' }}
-                                            label="NÚMERO DE TARJETA"
+                                            label="CARD NUMBER"
                                             variant="outlined"
                                             value={cardData.cardNumber}
                                             onChange={handleChange('cardNumber')}
@@ -371,7 +632,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                         />
                                         <TextField
                                             style={{ width: '100%', marginTop: 10 }}
-                                            label="NOMBRE DEL TITULAR"
+                                            label="CARDHOLDER NAME"
                                             variant="outlined"
                                             value={cardData.cardholderName}
                                             onChange={handleChange('cardholderName')}
@@ -469,11 +730,11 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                                 minWidth: '120px'
                                             }}
                                         >
-                                            {isSubmitting ? 'Procesando...' : 'PAGAR AHORA'}
+                                            {isSubmitting ? 'Processing...' : 'PAY NOW'}
                                         </Button>
                                         <Button
                                             variant="outlined"
-                                            onClick={onClose}
+                                            onClick={savedPaymentMethods.length > 0 ? () => setShowNewCardForm(false) : onClose}
                                             disabled={isSubmitting}
                                             sx={{
                                                 py: 1,
@@ -487,7 +748,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                                 minWidth: '100px'
                                             }}
                                         >
-                                            CANCELAR
+                                            {savedPaymentMethods.length > 0 ? 'BACK' : 'CANCEL'}
                                         </Button>
                                     </Box>
                                 </Grid>
@@ -510,10 +771,11 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                     minWidth: '120px'
                                 }}
                             >
-                                {paymentResult.status === 'approved' ? 'CERRAR' : 'VOLVER'}
+                                {paymentResult.status === 'approved' ? 'CLOSE' : 'BACK'}
                             </Button>
                         </Box>
                     )}
+
                 </Box>
             </Fade>
         </Modal>

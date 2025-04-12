@@ -1,23 +1,24 @@
-import { Product } from '../../domain/models/Product';
 import api from '../../../../shared/infrastructure/api';
-import { JwtService } from '../../../../shared/infrastructure/JwtService';
+import { Product } from '../../domain/models/Product';
 
 export interface IProductService {
     getProducts(): Promise<Product[]>;
 }
 
 export class ProductService implements IProductService {
-    private jwtService: JwtService;
-
     constructor() {
-        this.jwtService = new JwtService();
     }
 
     /**
-     * Login
+     * Login user
      * @param email
      * @param password
      * @returns token
+     * @description Login
+     * @example
+     * ```typescript
+     * const token = await userService.login('email', 'password');
+     * ```
      */
     async login(): Promise<any> {
         const payload = {
@@ -40,6 +41,15 @@ export class ProductService implements IProductService {
         }
     }
 
+    /**
+     * Get products
+     * @returns products
+     * @description Get products
+     * @example
+     * ```typescript
+     * const products = await productService.getProducts(); 
+     * ```
+     */
     async getProducts(): Promise<Product[]> {
         try {
             const response = await api.get('/v1/products');
@@ -51,8 +61,24 @@ export class ProductService implements IProductService {
         }
     }
 
+    /**
+     * Get user
+     * @param token
+     * @returns user
+     * @description Get user
+     * @example
+     * ```typescript
+     * const user = await userService.getUser('token'); 
+     * ```
+     */
     private async getUser(token: string): Promise<any> {
-        return null;//this.jwtService.decode(token);
+        const responseValidateToken = await api.post('/v1/auth/validate-token', {
+            token
+        });
+        if (responseValidateToken.data) {
+            return responseValidateToken.data;
+        }
+        return null;
     }
 
 }

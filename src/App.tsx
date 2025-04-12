@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { ProductList } from './core/products/presentation/components/ProductList';
 import ErrorNotification from './shared/feedback/ErrorNotification';
+import { PaymentMethodProvider } from './contexts/PaymentMethodContext';
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -29,7 +30,7 @@ function App() {
   const headerOpacity = Math.min(1, scrollPosition / 120);
 
   return (
-    <>
+    <PaymentMethodProvider>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -101,7 +102,7 @@ function App() {
         <ProductList />
         <ErrorNotification />
       </Container>
-    </>
+    </PaymentMethodProvider>
   )
 }
 

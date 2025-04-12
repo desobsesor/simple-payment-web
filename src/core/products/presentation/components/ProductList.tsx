@@ -29,7 +29,11 @@ export const ProductList = () => {
             .then((data) => {
                 const { token, user } = data;
                 if (token) {
-                    console.log('Token:', token);
+                    setNotification({
+                        open: true,
+                        message: `Authenticated user: ${user.username}`,
+                        severity: 'info'
+                    });
                 }
                 setUser(user)
             }).catch(err => {
@@ -55,14 +59,14 @@ export const ProductList = () => {
     }, []);
 
     if (loading) return (
-        <Grid container spacing={4} sx={{ paddingY: 4, maxWidth: '100%' }}>
-            {[...Array(4)].map((_, index) => (
+        <Grid container spacing={4} sx={{ paddingY: 4, minWidth: '100%' }}>
+            {[...Array(12)].map((_, index) => (
                 <Grid key={index}
                     size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
                     sx={{ width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' } }}>
                     <Card
                         component={motion.div}
-                        whileHover={{ scale: 1.03 }}
+                        whileHover={{ scale: 1.05 }}
                         sx={{
                             height: '100%',
                             display: 'flex',
@@ -93,7 +97,7 @@ export const ProductList = () => {
 
     if (error) return <ErrorPage error={error} />
 
-    const handleQuantityChange = (productId: string, increment: boolean) => {
+    const handleQuantityChange = (productId: string, increment: boolean): void => {
         const currentQuantity = quantities[productId] || 1;
         const product = products.find(p => p.productId === productId);
 
@@ -132,18 +136,16 @@ export const ProductList = () => {
         setEditingProductId('');
     };
 
-    // Quantity editing functionality has been moved to QuantityEditPopover component
-
     const handleCloseNotification = () => {
         setNotification(prev => ({ ...prev, open: false }));
     };
 
     return (
         <>
-            <Grid container spacing={2} sx={{ paddingY: 2, maxWidth: '100%' }}>
+            <Grid container spacing={4} sx={{ paddingY: 2, maxWidth: '100%' }} >
                 {products.map((product) => (
                     <Grid key={product.productId}
-                        size={{ xs: 12, sm: 6, md: 3, lg: 3 }} sx={{ mb: 2 }}>
+                        sx={{ mb: 2, width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' } }} >
                         <Card
                             component={motion.div}
                             whileHover={{ scale: 1.01 }}
