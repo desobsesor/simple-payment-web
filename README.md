@@ -2,12 +2,12 @@
   <a href="http://nestjs.com/" target="blank"><img src="./src/assets/simple-payment-min.png" width="200" alt="Nest Logo" /></a>
 </p>
 
-<h1 align="center">🚨 Web Simple Payment Application</h1>
+<h1 align="center">🚨 Simple payment web application</h1>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A simple web application for product payments.</p>
+  <p align="center">A simple payment web application for product payments.</p>
     <p align="center">
 <a href="https://reactjs.org" target="_blank"><img src="https://img.shields.io/badge/React-v18.0.0-%2361DAFB" alt="React"></a>
 <a href="https://www.typescriptlang.org" target="_blank"><img src="https://img.shields.io/badge/TypeScript-v4.9.5-%233178C6" alt="TypeScript"></a>
@@ -20,6 +20,12 @@
 ## Description📍
 
 Simple Payment Web Application.
+
+## Preview 📸
+
+<p align="center">
+  <img src="./public/screenshot.png" alt="Database Schema" width="800"/>
+</p>
 
 ## Project setup ✅
 

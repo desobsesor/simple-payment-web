@@ -5,13 +5,19 @@ import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
 import theme from './theme';
+import { ErrorProvider } from './contexts/ErrorContext.tsx';
+import { UserProvider } from './contexts/UserContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </ThemeProvider>
+    <UserProvider>
+      <ErrorProvider>
+        <ThemeProvider theme={theme}>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
+      </ErrorProvider>
+    </UserProvider>
   </StrictMode>,
 )
