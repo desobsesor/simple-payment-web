@@ -12,6 +12,191 @@ import { ProductService } from '../../infrastructure/services/ProductService';
 import { PaymentCardModal } from './PaymentCardModal';
 import { ProductImageModal } from './ProductImageModal';
 import { ProductInfoModal } from './ProductInfoModal';
+import { SxProps } from '@mui/system';
+
+//#region STYLES
+
+const getGridContainerStyles = (): SxProps => ({
+    paddingY: 2,
+    maxWidth: '100%'
+});
+
+const getLoadingGridContainerStyles = (): SxProps => ({
+    paddingY: 4,
+    minWidth: '100%'
+});
+
+const getGridItemStyles = (): SxProps => ({
+    mb: 2,
+    width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' }
+});
+
+const getCardStyles = (): SxProps => ({
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: 3,
+    borderRadius: 4,
+    overflow: 'hidden',
+    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+    bgcolor: '#FFFFFF',
+    maxWidth: 280,
+    mx: 'auto'
+});
+
+const getLoadingCardStyles = (): SxProps => ({
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: 2,
+    borderRadius: 2,
+    overflow: 'hidden',
+    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out'
+});
+
+const getCardHeaderStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    p: 2
+});
+
+const getInfoButtonStyles = (): SxProps => ({
+    bgcolor: '#F5F5F5',
+    width: 36,
+    height: 36
+});
+
+const getProductImageStyles = (): SxProps => ({
+    width: '100%',
+    height: 220,
+    objectFit: 'cover',
+    mb: 2
+});
+
+const getCardContentStyles = (): SxProps => ({
+    px: 3,
+    pt: 0,
+    pb: 2
+});
+
+const getQuantityContainerStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    mb: 1
+});
+
+const getQuantityControlsStyles = (): SxProps => ({
+    display: 'flex',
+    alignItems: 'center',
+    mb: 2,
+    mt: 0.5
+});
+
+const getDecreaseButtonStyles = (): SxProps => ({
+    bgcolor: '#F5F5F5',
+    borderRadius: '50%',
+    width: 24,
+    height: 24,
+    '&:hover': { bgcolor: '#E0E0E0' }
+});
+
+const getIncreaseButtonStyles = (): SxProps => ({
+    bgcolor: '#4CAF50',
+    color: 'white',
+    borderRadius: '50%',
+    width: 24,
+    height: 24,
+    '&:hover': { bgcolor: '#43A047' }
+});
+
+const getQuantityTextStyles = (): SxProps => ({
+    mx: 1,
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    '&:hover': { textDecoration: 'underline' }
+});
+
+const getPriceStyles = (): SxProps => ({
+    fontWeight: 'bold'
+});
+
+const getDescriptionStyles = (): SxProps => ({
+    mb: 2,
+    lineHeight: 1.6,
+    display: '-webkit-box',
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    height: '4.8em'
+});
+
+const getStockContainerStyles = (): SxProps => ({
+    mb: 3
+});
+
+const getStockPaperStyles = (): SxProps => ({
+    bgcolor: '#F5F5F5',
+    p: 1,
+    borderRadius: 2,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1
+});
+
+const getStockIconContainerStyles = (): SxProps => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    bgcolor: '#4CAF50',
+    color: 'white',
+    borderRadius: '50%',
+    width: 32,
+    height: 32,
+    mr: 1.5,
+    pt: 1
+});
+
+const getStockIconStyles = (): SxProps => ({
+    fontSize: 14
+});
+
+const getPayButtonStyles = (): SxProps => ({
+    textTransform: 'none',
+    fontWeight: 'bold',
+    fontSize: '1rem',
+    py: 1.5,
+    borderRadius: 8,
+    bgcolor: '#4CAF50',
+    '&:hover': {
+        bgcolor: '#43A047'
+    }
+});
+
+const getLoadingBoxStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    mb: 1
+});
+
+const getLoadingCardActionsStyles = (): SxProps => ({
+    justifyContent: 'flex-start',
+    px: 2,
+    pb: 2,
+    pt: 0
+});
+
+const getLoadingCardContentStyles = (): SxProps => ({
+    flexGrow: 1,
+    px: 2,
+    pt: 2,
+    pb: 1
+});
+
+//#endregion
 
 export const ProductList = () => {
     const { setUser } = useUser();
@@ -63,34 +248,26 @@ export const ProductList = () => {
     }, []);
 
     if (loading) return (
-        <Grid container spacing={4} sx={{ paddingY: 4, minWidth: '100%' }}>
+        <Grid container spacing={4} sx={getLoadingGridContainerStyles()}>
             {[...Array(12)].map((_, index) => (
                 <Grid key={index}
                     size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    sx={{ width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' } }}>
+                    sx={getGridItemStyles()}>
                     <Card
                         component={motion.div}
                         whileHover={{ scale: 1.05 }}
-                        sx={{
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            boxShadow: 2,
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out'
-                        }}
+                        sx={getLoadingCardStyles()}
                     >
                         <Skeleton variant="rectangular" height={140} />
-                        <CardContent sx={{ flexGrow: 1, px: 2, pt: 2, pb: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <CardContent sx={getLoadingCardContentStyles()}>
+                            <Box sx={getLoadingBoxStyles()}>
                                 <Skeleton width="60%" height={32} />
                                 <Skeleton width="80px" height={32} variant="rounded" />
                             </Box>
                             <Skeleton width="60%" />
                             <Skeleton width="40%" sx={{ mt: 2 }} />
                         </CardContent>
-                        <CardActions sx={{ justifyContent: 'flex-start', px: 2, pb: 2, pt: 0 }}>
+                        <CardActions sx={getLoadingCardActionsStyles()}>
                             <Skeleton width="80px" height="36px" />
                         </CardActions>
                     </Card>
@@ -146,30 +323,18 @@ export const ProductList = () => {
 
     return (
         <>
-            <Grid container spacing={4} sx={{ paddingY: 2, maxWidth: '100%' }} >
+            <Grid container spacing={4} sx={getGridContainerStyles()} >
                 {products.map((product) => (
-                    <Grid key={product.productId}
-                        sx={{ mb: 2, width: { sm: 'calc(50% - 32px)', md: 'calc(33.33% - 32px)', lg: 'calc(25% - 32px)' } }} >
+                    <Grid key={product.productId} sx={getGridItemStyles()} >
                         <Card
                             component={motion.div}
                             whileHover={{ scale: 1.01 }}
-                            sx={{
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                boxShadow: 3,
-                                borderRadius: 4,
-                                overflow: 'hidden',
-                                transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                                bgcolor: '#FFFFFF',
-                                maxWidth: 280,
-                                mx: 'auto'
-                            }}
+                            sx={getCardStyles()}
                         >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
+                            <Box sx={getCardHeaderStyles()}>
                                 <IconButton
                                     size="small"
-                                    sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}
+                                    sx={getInfoButtonStyles()}
                                     onClick={() => {
                                         setSelectedProduct(product);
                                         setInfoModalOpen(true);
@@ -182,7 +347,7 @@ export const ProductList = () => {
                                 </Typography>
                                 <IconButton
                                     size="small"
-                                    sx={{ bgcolor: '#F5F5F5', width: 36, height: 36 }}
+                                    sx={getInfoButtonStyles()}
                                     onClick={() => {
                                         setSelectedProduct(product);
                                         setImageModalOpen(true);
@@ -196,37 +361,21 @@ export const ProductList = () => {
                                 component="img"
                                 src={`./src/assets/${product.imageUrl}`}
                                 alt={product.name}
-                                sx={{
-                                    width: '100%',
-                                    height: 220,
-                                    objectFit: 'cover',
-                                    mb: 2
-                                }}
+                                sx={getProductImageStyles()}
                             />
 
-                            <CardContent sx={{ px: 3, pt: 0, pb: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 0.5 }}>
+                            <CardContent sx={getCardContentStyles()}>
+                                <Box sx={getQuantityContainerStyles()}>
+                                    <Box sx={getQuantityControlsStyles()}>
                                         <IconButton
                                             size="small"
                                             onClick={() => handleQuantityChange(product.productId, false)}
-                                            sx={{
-                                                bgcolor: '#F5F5F5',
-                                                borderRadius: '50%',
-                                                width: 24,
-                                                height: 24,
-                                                '&:hover': { bgcolor: '#E0E0E0' }
-                                            }}
+                                            sx={getDecreaseButtonStyles()}
                                         >
                                             <RemoveIcon fontSize="small" />
                                         </IconButton>
                                         <Typography
-                                            sx={{
-                                                mx: 1,
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                '&:hover': { textDecoration: 'underline' }
-                                            }}
+                                            sx={getQuantityTextStyles()}
                                             onClick={(e) => handleQuantityClick(e, product.productId)}
                                         >
                                             {quantities[product.productId] || 1}Kg
@@ -234,19 +383,12 @@ export const ProductList = () => {
                                         <IconButton
                                             size="small"
                                             onClick={() => handleQuantityChange(product.productId, true)}
-                                            sx={{
-                                                bgcolor: '#4CAF50',
-                                                color: 'white',
-                                                borderRadius: '50%',
-                                                width: 24,
-                                                height: 24,
-                                                '&:hover': { bgcolor: '#43A047' }
-                                            }}
+                                            sx={getIncreaseButtonStyles()}
                                         >
                                             <AddIcon fontSize="small" />
                                         </IconButton>
                                     </Box>
-                                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                                    <Typography variant="h5" sx={getPriceStyles()}>
                                         {formatToLocalCurrency(product.price, 'es-CO')}
                                     </Typography>
                                 </Box>
@@ -273,42 +415,14 @@ export const ProductList = () => {
                                     }}
                                 />
 
-                                <Typography variant="body2" color="text.secondary" sx={{
-                                    mb: 2,
-                                    lineHeight: 1.6,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 3,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    height: '4.8em'
-                                }}>
+                                <Typography variant="body2" color="text.secondary" sx={getDescriptionStyles()}>
                                     {product.description}
                                 </Typography>
 
-                                <Stack direction="column" spacing={2} sx={{ mb: 3 }}>
-                                    <Paper elevation={0} sx={{
-                                        bgcolor: '#F5F5F5',
-                                        p: 1,
-                                        borderRadius: 2,
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        flex: 1
-                                    }}>
-                                        <Box sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: '#4CAF50',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            width: 32,
-                                            height: 32,
-                                            mr: 1.5,
-                                            pt: 1
-                                        }}>
-                                            <Box component="span" sx={{ fontSize: 14 }}>
+                                <Stack direction="column" spacing={2} sx={getStockContainerStyles()}>
+                                    <Paper elevation={0} sx={getStockPaperStyles()}>
+                                        <Box sx={getStockIconContainerStyles()}>
+                                            <Box component="span" sx={getStockIconStyles()}>
                                                 <Inventory2Sharp style={{ color: 'whitesmoke' }} fontSize="small" />
                                             </Box>
                                         </Box>
@@ -325,17 +439,7 @@ export const ProductList = () => {
                                         setSelectedProduct(product);
                                         setPaymentModalOpen(true);
                                     }}
-                                    sx={{
-                                        textTransform: 'none',
-                                        fontWeight: 'bold',
-                                        fontSize: '1rem',
-                                        py: 1.5,
-                                        borderRadius: 8,
-                                        bgcolor: '#4CAF50',
-                                        '&:hover': {
-                                            bgcolor: '#43A047'
-                                        }
-                                    }}
+                                    sx={getPayButtonStyles()}
                                     startIcon={<CreditCardIcon />}
                                 >
                                     Pay with credit card
