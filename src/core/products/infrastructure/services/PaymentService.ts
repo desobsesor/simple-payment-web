@@ -1,6 +1,5 @@
 import api from '../../../../shared/infrastructure/api';
-// import { JwtService } from '../../../../shared/infrastructure/JwtService';
-import { PaymentStatus } from '../../presentation/components/PaymentSummary';
+import { PaymentStatus } from '../../../../types/types';
 
 export interface PaymentResponse {
     status: PaymentStatus;
@@ -22,11 +21,9 @@ export interface PaymentRequest {
 }
 
 export class PaymentService {
-    // private jwtService: JwtService;
-
     constructor() {
-        //this.jwtService = new JwtService();
     }
+
     /**
      * Process a payment transaction
      * @param paymentData Payment information
@@ -76,7 +73,7 @@ export class PaymentService {
                     .then(() => resolve(responseData))
                     .catch(error => {
                         // Handle API errors gracefully
-                        console.error('Transaction registration failed:', error);
+                        // console.error('Transaction registration failed:', error);
                         resolve({
                             status: 'rejected',
                             transactionId,
@@ -106,11 +103,18 @@ export class PaymentService {
                         status: 'approved',
                         transactionId
                     });
-                } else {
-                    // 20% chance it's still pending
+                } else if (randomOutcome < 0.9) {
+                    // 10% chance it's still pending
                     resolve({
                         status: 'pending',
                         transactionId
+                    });
+                } else {
+                    // 10% chance it's rejected
+                    resolve({
+                        status: 'rejected',
+                        transactionId,
+                        errorMessage: 'Transaction rejected by the issuing bank'
                     });
                 }
             }, 1500);
