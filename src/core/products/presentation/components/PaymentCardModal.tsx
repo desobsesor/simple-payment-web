@@ -2,6 +2,7 @@ import { CreditCard as CreditCardIcon, Event as EventIcon, Label, Lock as LockIc
 import {
     Box,
     Button,
+    Divider,
     Fade,
     FormHelperText,
     Grid,
@@ -9,20 +10,20 @@ import {
     Modal,
     Paper,
     TextField,
-    Typography,
-    Divider
+    Typography
 } from '@mui/material';
 import { SxProps } from '@mui/system';
 import { useEffect, useState } from 'react';
-import useUser from '../../../../contexts/UserContext';
 import usePaymentMethod from '../../../../contexts/PaymentMethodContext';
+import useUser from '../../../../contexts/UserContext';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
-import { PaymentRequest, PaymentService } from '../../infrastructure/services/PaymentService';
-import { PaymentStatus, PaymentSummary } from './PaymentSummary';
+import { PaymentStatus } from '../../../../types/types';
 import { PaymentMethod } from '../../domain/models/PaymentMethod';
-import { PaymentMethodService } from '../../infrastructure/services/PaymentMethodService';
-import { SavedPaymentMethodList } from './SavedPaymentMethodList';
 import { defaultMockPaymentMethods, fallbackMockPaymentMethods } from '../../infrastructure/mocks/PaymentMethodMocks';
+import { PaymentMethodService } from '../../infrastructure/services/PaymentMethodService';
+import { PaymentRequest, PaymentService } from '../../infrastructure/services/PaymentService';
+import { PaymentSummary } from './PaymentSummary';
+import { SavedPaymentMethodList } from './SavedPaymentMethodList';
 
 //#region STYLES
 
@@ -251,7 +252,6 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
     const paymentMethodService = new PaymentMethodService();
 
     useEffect(() => {
-        console.log('user in useEffect:', user);
         if (!open) {
             setCardData({
                 cardNumber: '1234567891122233',
@@ -432,7 +432,10 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
                 // Only close modal automatically if payment is approved
                 if (response.status === 'approved') {
-                    setTimeout(() => onClose(), 3000);
+                    -                     // Ya se registró la transacción en el método processPayment del servicio
+                        +                     // The transaction was already registered in the service's processPayment method
+                        console.log('Payment approved with new card. Transaction already registered.');
+                    setTimeout(() => onClose(), 4000);
                 }
             } catch (error) {
                 console.error('Payment error:', error);
@@ -467,7 +470,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
             // Update payment result
             setPaymentResult({
-                status: 'approved',//response.status, //NOTE: this is a mock response
+                status: response.status as any,
                 transactionId: response.transactionId,
                 errorMessage: response.errorMessage
             });
@@ -481,13 +484,33 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
             // Only close modal automatically if payment is approved
             if (response.status === 'approved') {
-                setTimeout(() => onClose(), 3000);
+                const transactionRequest: any = {
+                    userId: user.userId,
+                    productId: productId,
+                    quantity: cant,
+                    amount: amount,
+                    selectedPaymentMethod,
+                    cardNumber: selectedPaymentMethod?.cardNumber || '',
+                    cardholderName: selectedPaymentMethod?.cardholderName || '',
+                    expiryMonth: selectedPaymentMethod?.expiryMonth || '',
+                    expiryYear: selectedPaymentMethod?.expiryYear || '',
+                    cvv: ''
+                };
+
+                try {
+                    await paymentService.processPayment(transactionRequest);
+                    console.log('Transaction registered successfully');
+                } catch (error) {
+                    console.error('Error registering transaction:', error);
+                }
+
+                setTimeout(() => onClose(), 2000);
             }
         } catch (error) {
             console.error('Payment error with saved method:', error);
             setPaymentResult({
                 status: 'rejected',
-                errorMessage: 'Error al procesar el pago. Por favor intente nuevamente.'
+                errorMessage: 'Error processing payment. Please try again.'
             });
             setIsSubmitting(false);
         }
@@ -536,7 +559,31 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
             if (updatedStatus.status === 'pending') {
                 checkPendingPayment(transactionId);
             } else if (updatedStatus.status === 'approved') {
-                // Close modal after 3 seconds if approved
+                // Si el pago fue aprobado, registrar la transacción
+                if (user?.userId && selectedPaymentMethod) {
+                    // Llamar al endpoint de process-payment para registrar la transacción
+                    const transactionRequest: any = {
+                        userId: user.userId,
+                        productId: productId,
+                        quantity: cant,
+                        amount: amount,
+                        paymentMethodId: selectedPaymentMethodId || '',
+                        selectedPaymentMethod,
+                        cardNumber: selectedPaymentMethod?.cardNumber || '',
+                        cardholderName: selectedPaymentMethod?.cardholderName || '',
+                        expiryMonth: selectedPaymentMethod?.expiryMonth || '',
+                        expiryYear: selectedPaymentMethod?.expiryYear || '',
+                        cvv: ''
+                    };
+
+                    try {
+                        await paymentService.processPayment(transactionRequest);
+                    } catch (error) {
+                        console.error('Error registering transaction after status change:', error);
+                    }
+                }
+
+                // Close modal after approved
                 setTimeout(() => onClose(), 3000);
             }
         } catch (error) {

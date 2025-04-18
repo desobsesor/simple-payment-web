@@ -1,10 +1,11 @@
 import { Add as AddIcon, CameraAlt as CameraIcon, CreditCard as CreditCardIcon, InfoRounded, Inventory2Sharp, Remove as RemoveIcon } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, Grid, IconButton, Paper, Skeleton, Stack, Typography } from '@mui/material';
-import { QuantityEditPopover } from './QuantityEditPopover';
-import { Notification } from '../../../../shared/feedback/Notification';
+import { SxProps } from '@mui/system';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useUser from '../../../../contexts/UserContext';
+import { Notification } from '../../../../shared/feedback/Notification';
+import useSocket from '../../../../shared/hooks/useSocket';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
 import ErrorPage from '../../../errors/presentation/ErrorPage';
 import { Product } from '../../domain/models/Product';
@@ -12,7 +13,7 @@ import { ProductService } from '../../infrastructure/services/ProductService';
 import { PaymentCardModal } from './PaymentCardModal';
 import { ProductImageModal } from './ProductImageModal';
 import { ProductInfoModal } from './ProductInfoModal';
-import { SxProps } from '@mui/system';
+import { QuantityEditPopover } from './QuantityEditPopover';
 
 //#region STYLES
 
@@ -212,6 +213,167 @@ export const ProductList = () => {
     const [editingProductId, setEditingProductId] = useState<string>('');
     const [notification, setNotification] = useState<{ open: boolean, message: string, severity: 'error' | 'warning' | 'info' | 'success' }>({ open: false, message: '', severity: 'error' });
 
+    //#region SOCKET
+
+    // Use the custom hook to manage the Socket.IO connection
+    const {
+        socket,
+        status: socketStatus,
+        isConnected,
+        connect,
+        emit,
+        on,
+        off
+    } = useSocket({
+        url: 'http://192.168.101.72:3000', //config.API_URL,
+        autoConnect: false,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        transports: ['websocket', 'polling'],
+        eventHandlers: {
+            'product_stock_updated': (data) => {
+                console.log('Product stock updated:', data);
+                handleProductStockUpdated(data);
+            },
+            'notification': (data) => {
+                alert(`Notification: ${data.text}`);
+            }
+        }
+    });
+
+    // Reference to control if connection has already been attempted
+    const [socketInitialized, setSocketInitialized] = useState(false);
+
+    // Start the connection only once when the component loads
+    // and only when necessary
+    useEffect(() => {
+        if (!socketInitialized && !isConnected) {
+            console.log('Starting manual socket connection');
+            connect();
+            setSocketInitialized(true);
+        }
+    }, [connect, socketInitialized, isConnected]);
+
+
+    // Use a reference to track the previous socket status
+    const prevSocketStatusRef = useRef(socketStatus);
+
+    useEffect(() => {
+        // Only show notification when the status changes (not on first load)
+        // and only for significant states (connected/error)
+        if (prevSocketStatusRef.current !== socketStatus) {
+            if (socketStatus === 'connected') {
+                setNotification({
+                    open: true,
+                    message: 'Connected to event server',
+                    severity: 'success'
+                });
+            } else if (socketStatus === 'error') {
+                setNotification({
+                    open: true,
+                    message: 'Connection error with event server',
+                    severity: 'error'
+                });
+            }
+            // Update the reference to the previous status
+            prevSocketStatusRef.current = socketStatus;
+        }
+    }, [socketStatus]);
+
+    // Reference to store the retry interval ID
+    const emitRetryIntervalRef = useRef<number | null>(null);
+
+    // Handler for the stock update event
+    const handleProductStockUpdated = useCallback((updatedData: any) => {
+        console.log('Product update event received:', updatedData);
+        setNotification({
+            open: true,
+            message: 'Product inventory updated',
+            severity: 'success'
+        });
+
+        // Update the product list when an update is received
+        const productService = new ProductService();
+        productService.getProductById(updatedData.productId)
+            .then(product => {
+                if (product) {
+                    setProducts(prevProducts => prevProducts.map(p => p.productId === product.productId ? product : p));
+                }
+            })
+            .catch(err => {
+                console.error('Error updating product:', err);
+            });
+    }, []);
+
+    // Function to try emitting the connection event
+    const tryEmitConnectionEvent = useCallback(() => {
+        if (socket) {
+            console.log('Emitting client_connected event with ID:', socket?.id);
+            // Ensure the event is emitted correctly
+            //emit('product_stock_updated', { productId: socket?.id, stock: 10 });
+
+            // Clear the interval if it exists
+            if (emitRetryIntervalRef.current !== null) {
+                window.clearInterval(emitRetryIntervalRef.current);
+                emitRetryIntervalRef.current = null;
+            }
+            // Clear all socket events
+            socket?.off('connect');
+            socket?.off('disconnect');
+            socket?.off('product_stock_updated');
+            return true;
+        }
+        return false;
+    }, [socket, emit]);
+
+    useEffect(() => {
+        if (isConnected && socket) {
+            // Register connection/disconnection events for debugging only when connected
+            console.log('Registering event handlers for connected socket');
+
+            on('connect', () => {
+                console.log('Socket connected with ID:', socket?.id);
+
+                // Try emitting the event immediately after connection
+                tryEmitConnectionEvent();
+            });
+
+            // Subscribe to the product_stock_updated event
+            // on('product_stock_updated', handleProductStockUpdated);
+
+            on('disconnect', (reason: any) => {
+                console.log('Socket disconnected, reason:', reason);
+            });
+        }
+
+        // Clean up subscriptions on unmount
+        return () => {
+
+            // Unsubscribe from events only if the socket exists
+            if (socket) {
+                off('connect');
+                off('disconnect');
+                off('product_stock_updated');
+            }
+
+            // Clear the interval if it exists
+            if (emitRetryIntervalRef.current !== null) {
+                window.clearInterval(emitRetryIntervalRef.current);
+                emitRetryIntervalRef.current = null;
+            }
+        };
+    }, [on, off, isConnected, socket, tryEmitConnectionEvent]);
+
+    useEffect(() => {
+        // If the socket disconnects unexpectedly and was already initialized,
+        // do not attempt to reconnect automatically, let the user do it
+        if (socketStatus === 'disconnected' && socketInitialized) {
+            console.log('Socket disconnected after initialization');
+        }
+    }, [socketStatus, socketInitialized]);
+
+    //#endregion
+
     useEffect(() => {
         const productService = new ProductService();
         productService.login()
@@ -232,12 +394,6 @@ export const ProductList = () => {
         productService.getProducts()
             .then(data => {
                 setProducts(data);
-                // Initialize quantities with 1 for each product
-                const initialQuantities: { [key: string]: number } = {};
-                data.forEach(product => {
-                    initialQuantities[product.productId] = Number(product.productId);
-                });
-                setQuantities(initialQuantities);
                 setLoading(false);
             })
             .catch(err => {
@@ -294,7 +450,7 @@ export const ProductList = () => {
         } else if (newQuantity > product.stock) {
             setNotification({
                 open: true,
-                message: `The quantity cannot be greater than the available stock(${product.stock} kg)`,
+                message: `The quantity cannot be greater than the available stock (${product.stock} kg)`,
                 severity: 'error'
             });
         } else if (newQuantity < 1) {
@@ -323,7 +479,9 @@ export const ProductList = () => {
 
     return (
         <>
+            {/* <h4 style={{ textAlign: 'center', color: '#4CAF50' }}>Socket Connection: {isConnected ? 'Connected' : 'Disconnected'}</h4>*/}
             <Grid container spacing={4} sx={getGridContainerStyles()} >
+
                 {products.map((product) => (
                     <Grid key={product.productId} sx={getGridItemStyles()} >
                         <Card
@@ -437,6 +595,7 @@ export const ProductList = () => {
                                     variant="contained"
                                     onClick={() => {
                                         setSelectedProduct(product);
+                                        console.log('Selected product:', product);
                                         setPaymentModalOpen(true);
                                     }}
                                     sx={getPayButtonStyles()}
@@ -458,7 +617,7 @@ export const ProductList = () => {
                         productName={selectedProduct.name}
                         amount={selectedProduct.price * (quantities[selectedProduct.productId] || 1)}
                         cant={quantities[selectedProduct.productId] || 1}
-                        productId={Number(quantities[selectedProduct.productId])}
+                        productId={Number(selectedProduct.productId)}
                     />
                     <ProductImageModal
                         open={imageModalOpen}
@@ -488,6 +647,4 @@ export const ProductList = () => {
             />
         </>
     );
-
-
 };

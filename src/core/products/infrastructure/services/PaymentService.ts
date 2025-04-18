@@ -18,6 +18,17 @@ export interface PaymentRequest {
     cvv: string;
     amount: number;
     productName?: string;
+    selectedPaymentMethod?: {
+        cardNumber: string;
+        cardholderName: string;
+        expiryMonth: string;
+        expiryYear: string;
+        cvv: string;
+        type: string;
+        brand: string;
+        lastFour: string;
+        token: string;
+    }
 }
 
 export class PaymentService {
@@ -73,7 +84,6 @@ export class PaymentService {
                     .then(() => resolve(responseData))
                     .catch(error => {
                         // Handle API errors gracefully
-                        // console.error('Transaction registration failed:', error);
                         resolve({
                             status: 'rejected',
                             transactionId,
@@ -130,16 +140,16 @@ export class PaymentService {
      */
     async registerTransaction(paymentData: PaymentRequest): Promise<any> {
         const transactionData = {
-            userId: paymentData.userId, // Use the provided user ID as a parameter
+            userId: paymentData.userId,
             paymentMethod: {
                 type: "card",
                 details: {
-                    type: 'Visa',
-                    lastFour: paymentData.cardNumber.substring(paymentData.cardNumber.length - 4),
+                    type: paymentData.selectedPaymentMethod?.brand,
+                    lastFour: paymentData.selectedPaymentMethod?.cardNumber.substring(paymentData.selectedPaymentMethod?.cardNumber.length - 4),
                     token: /*this.jwtService.sign(*/{
-                        cardholderName: paymentData.cardholderName,
-                        expiryMonth: paymentData.expiryMonth,
-                        expiryYear: paymentData.expiryYear
+                        cardholderName: paymentData.selectedPaymentMethod?.cardholderName,
+                        expiryMonth: paymentData.selectedPaymentMethod?.expiryMonth,
+                        expiryYear: paymentData.selectedPaymentMethod?.expiryYear
                     }/*, 'secret-key'),*/
                 }
             },
@@ -150,11 +160,18 @@ export class PaymentService {
                     unitPrice: paymentData.amount
                 }
             ],
-            amount: paymentData.amount,
+            products: [
+                {
+                    productId: paymentData.productId,
+                    quantity: paymentData.quantity,
+                    unitPrice: paymentData.amount
+                }
+            ],
+            totalAmount: paymentData.amount,
             status: "pending"
         };
 
-        return api.post('/v1/transactions', transactionData, {
+        return api.post('/v1/transactions/process-payment', transactionData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': '*/*'

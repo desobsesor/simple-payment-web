@@ -134,7 +134,7 @@ export const SavedPaymentMethodList = ({
                                 primary={
                                     <Box sx={getCardInfoStyles()}>
                                         <Typography variant="body1" component="span">
-                                            {method.brand === 'visa' ? 'Visa' : method.brand === 'mastercard' ? 'Mastercard' : 'Tarjeta'}-{method.lastFour}
+                                            {method.brand === 'visa' ? 'Visa' : method.brand === 'mastercard' ? 'Mastercard' : 'Card'}-{method.lastFour}
                                         </Typography>
                                         {method.isDefault && (
                                             <Typography

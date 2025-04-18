@@ -53,11 +53,32 @@ export class ProductService implements IProductService {
     async getProducts(): Promise<Product[]> {
         try {
             const response = await api.get('/v1/products');
-            console.log('resp: ', response);
+            //console.log('resp: ', response);
             return response.data;
         } catch (error) {
             console.error('Error fetching products:', error);
             throw new Error('Failed to fetch products');
+        }
+    }
+
+    /**
+     * Get product
+     * @param id
+     * @returns product
+     * @description Get product
+     * @example
+     * ```typescript
+     * const product = await productService.getProductById(1);
+     * 
+     * ```
+     */
+    async getProductById(id: number): Promise<Product> {
+        try {
+            const response = await api.get(`/v1/products/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            throw new Error('Failed to fetch product');
         }
     }
 
