@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "types": ["vite/client"],
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["vite/client", "jest"],
+    "isolatedModules": true
   },
   "files": [],
   "references": [

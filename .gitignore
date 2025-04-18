@@ -16,6 +16,7 @@ dist-ssr
 .env
 .env.development
 .env.production
+.env.test
 
 package-lock.json
 
@@ -29,3 +30,5 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+coverage
