@@ -8,24 +8,24 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-    }
+        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+    },
+    withCredentials: true,
 });
 
 // Interceptor for JWT
 
-/*
 api.interceptors.request.use((cfg) => {
     const token = localStorage.getItem('token');
-    console.log('token: ', token);
     if (token) {
         cfg.headers.Authorization = `Bearer ${token}`;
     }
     return cfg;
 });
-*/
+
 
 // Interceptor for unauthorized responses
-/*
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -36,6 +36,6 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-*/
+
 
 export default api;

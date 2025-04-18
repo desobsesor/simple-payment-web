@@ -1,0 +1,1 @@
+export type PaymentStatus = 'idle' | 'processing' | 'approved' | 'pending' | 'rejected';

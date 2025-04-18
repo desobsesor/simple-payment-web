@@ -1,8 +1,7 @@
 import { CheckCircle, Error as ErrorIcon, HourglassEmpty, Pending } from '@mui/icons-material';
 import { Box, CircularProgress, Fade, Paper, Step, StepLabel, Stepper, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-
-export type PaymentStatus = 'idle' | 'processing' | 'approved' | 'pending' | 'rejected';
+import { PaymentStatus } from '../../../../types/types';
 
 interface PaymentSummaryProps {
     status: PaymentStatus;

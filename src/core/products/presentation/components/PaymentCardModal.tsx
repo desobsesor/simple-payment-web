@@ -2,6 +2,7 @@ import { CreditCard as CreditCardIcon, Event as EventIcon, Label, Lock as LockIc
 import {
     Box,
     Button,
+    Divider,
     Fade,
     FormHelperText,
     Grid,
@@ -9,18 +10,198 @@ import {
     Modal,
     Paper,
     TextField,
-    Typography,
-    Divider
+    Typography
 } from '@mui/material';
+import { SxProps } from '@mui/system';
 import { useEffect, useState } from 'react';
-import useUser from '../../../../contexts/UserContext';
 import usePaymentMethod from '../../../../contexts/PaymentMethodContext';
+import useUser from '../../../../contexts/UserContext';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
-import { PaymentRequest, PaymentService } from '../../infrastructure/services/PaymentService';
-import { PaymentStatus, PaymentSummary } from './PaymentSummary';
+import { PaymentStatus } from '../../../../types/types';
 import { PaymentMethod } from '../../domain/models/PaymentMethod';
+import { defaultMockPaymentMethods, fallbackMockPaymentMethods } from '../../infrastructure/mocks/PaymentMethodMocks';
 import { PaymentMethodService } from '../../infrastructure/services/PaymentMethodService';
+import { PaymentRequest, PaymentService } from '../../infrastructure/services/PaymentService';
+import { PaymentSummary } from './PaymentSummary';
 import { SavedPaymentMethodList } from './SavedPaymentMethodList';
+
+//#region STYLES
+
+const getModalBoxStyles = (): SxProps => ({
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: { xs: '90%', sm: 360 },
+    bgcolor: 'background.paper',
+    borderRadius: 4,
+    boxShadow: 24,
+    p: 3,
+    outline: 'none',
+    maxHeight: '90vh',
+    overflowY: 'auto'
+});
+
+const getProductInfoStyles = (): SxProps => ({
+    bgcolor: 'rgba(33, 150, 243, 0.1)',
+    borderRadius: 2,
+    padding: 1,
+    color: '#0d47a1',
+    border: '1px solid rgba(33, 150, 243, 0.3)',
+    fontWeight: 'medium',
+    mb: 2
+});
+
+const getPayButtonContainerStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'center',
+    mt: 0.5,
+    mb: 0.5
+});
+
+const getPayButtonStyles = (): SxProps => ({
+    py: 1,
+    bgcolor: '#2196f3',
+    '&:hover': { bgcolor: '#1976d2' },
+    borderRadius: 2,
+    textTransform: 'none',
+    fontWeight: 'bold',
+    minWidth: '180px'
+});
+
+const getCardVisualStyles = (): SxProps => ({
+    bgcolor: '#2196f3',
+    color: 'white',
+    borderRadius: 2,
+    p: 2,
+    mb: 3,
+    position: 'relative',
+    height: 160,
+    mx: 2,
+    backgroundImage: 'linear-gradient(135deg, #2196f3 0%, #0d47a1 100%)'
+});
+
+const getCardChipContainerStyles = (): SxProps => ({
+    position: 'absolute',
+    top: 15,
+    right: 15
+});
+
+const getCardChipStyles = (): SxProps => ({
+    display: 'flex',
+    alignItems: 'center'
+});
+
+const getCardChipBoxStyles = (): SxProps => ({
+    width: 30,
+    height: 20,
+    borderRadius: 1,
+    bgcolor: '#f5f5f5',
+    mr: 1,
+    display: 'inline-block'
+});
+
+const getCardWaveStyles = (): SxProps => ({
+    opacity: 0.9,
+    fontSize: 18
+});
+
+const getCardNumberStyles = (): SxProps => ({
+    letterSpacing: 2,
+    mb: 2,
+    fontFamily: 'monospace',
+    fontSize: '1.1rem'
+});
+
+const getCardInfoContainerStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end'
+});
+
+const getCardholderNameStyles = (): SxProps => ({
+    textTransform: 'uppercase',
+    opacity: 0.8
+});
+
+const getCardExpiryStyles = (): SxProps => ({
+    opacity: 0.8
+});
+
+const getCardBrandImageStyles = (): SxProps => ({
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    width: 40,
+    height: 25,
+    objectFit: 'contain'
+});
+
+const getFormContainerStyles = (): SxProps => ({
+    gap: 2
+});
+
+const getExpiryContainerStyles = (): SxProps => ({
+    display: 'flex',
+    gap: 1
+});
+
+const getExpiryMonthStyles = (): SxProps => ({
+    width: '50%',
+    py: 0
+});
+
+const getButtonContainerStyles = (): SxProps => ({
+    display: 'flex',
+    gap: 2,
+    justifyContent: 'flex-end',
+    alignContent: 'flex-end'
+});
+
+const getSubmitButtonStyles = (): SxProps => ({
+    py: 1,
+    bgcolor: '#2196f3',
+    '&:hover': { bgcolor: '#1976d2' },
+    borderRadius: 2,
+    textTransform: 'none',
+    fontWeight: 'bold',
+    minWidth: '120px'
+});
+
+const getCancelButtonStyles = (): SxProps => ({
+    py: 1,
+    borderRadius: 2,
+    textTransform: 'none',
+    color: '#757575',
+    borderColor: '#bdbdbd',
+    '&:hover': {
+        borderColor: '#757575',
+    },
+    minWidth: '100px'
+});
+
+const getCloseButtonContainerStyles = (): SxProps => ({
+    display: 'flex',
+    justifyContent: 'center',
+    mt: 3
+});
+
+const getCloseButtonStyles = (): SxProps => ({
+    py: 1,
+    borderRadius: 2,
+    textTransform: 'none',
+    color: '#757575',
+    borderColor: '#bdbdbd',
+    '&:hover': {
+        borderColor: '#757575',
+    },
+    minWidth: '120px'
+});
+
+//#endregion
+
+//#region INTERFACES
+
 interface PaymentCardModalProps {
     open: boolean;
     onClose: () => void;
@@ -43,6 +224,8 @@ interface PaymentResult {
     transactionId?: string;
     errorMessage?: string;
 }
+
+//#endregion
 
 export const PaymentCardModal = ({ open, onClose, productName, amount, cant, productId }: PaymentCardModalProps) => {
     const { user } = useUser();
@@ -69,9 +252,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
     const paymentMethodService = new PaymentMethodService();
 
     useEffect(() => {
-        console.log('user in useEffect:', user);
         if (!open) {
-            // Reset form when modal closes
             setCardData({
                 cardNumber: '1234567891122233',
                 cardholderName: 'Yovany Suárez Silva',
@@ -118,45 +299,8 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                     setShowNewCardForm(true);
                 }
             } else {
-                // If there are no methods, use mock data
-                const mockMethods: PaymentMethod[] = [
-                    {
-                        id: 'pm_mock1',
-                        type: 'credit',
-                        cardNumber: '4111111111111111',
-                        lastFour: '1111',
-                        cardholderName: 'Yovany Suárez Silva',
-                        expiryMonth: '12',
-                        expiryYear: '25',
-                        brand: 'visa',
-                        isDefault: true,
-                        isExpired: false
-                    },
-                    {
-                        id: 'pm_mock2',
-                        type: 'credit',
-                        cardNumber: '5555555555554444',
-                        lastFour: '4444',
-                        cardholderName: 'Yovany Suárez Silva',
-                        expiryMonth: '10',
-                        expiryYear: '24',
-                        brand: 'mastercard',
-                        isDefault: false,
-                        isExpired: false
-                    },
-                    {
-                        id: 'pm_mock3',
-                        type: 'debit',
-                        cardNumber: '4111111111112222',
-                        lastFour: '2222',
-                        cardholderName: 'Yovany Suárez Silva',
-                        expiryMonth: '03',
-                        expiryYear: '23',
-                        brand: 'visa',
-                        isDefault: false,
-                        isExpired: true
-                    }
-                ];
+                // If there are no methods, use mock data from our mocks file
+                const mockMethods = defaultMockPaymentMethods;
 
                 setSavedPaymentMethods(mockMethods);
                 setSelectedPaymentMethodId('pm_mock1');
@@ -165,33 +309,8 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
         } catch (error) {
             console.error('Error loading payment methods:', error);
 
-            // If there is an error, use mock data
-            const mockMethods: PaymentMethod[] = [
-                {
-                    id: 'pm_mock1',
-                    type: 'credit',
-                    cardNumber: '4111111111111111',
-                    lastFour: '1111',
-                    cardholderName: 'Yovany Suárez Silva',
-                    expiryMonth: '12',
-                    expiryYear: '25',
-                    brand: 'visa',
-                    isDefault: true,
-                    isExpired: false
-                },
-                {
-                    id: 'pm_mock2',
-                    type: 'credit',
-                    cardNumber: '5555555555554444',
-                    lastFour: '4444',
-                    cardholderName: 'Yovany Suárez Silva',
-                    expiryMonth: '10',
-                    expiryYear: '24',
-                    brand: 'mastercard',
-                    isDefault: false,
-                    isExpired: false
-                }
-            ];
+            // If there is an error, use fallback mock data from our mocks file
+            const mockMethods = fallbackMockPaymentMethods;
 
             setSavedPaymentMethods(mockMethods);
             setSelectedPaymentMethodId('pm_mock1');
@@ -313,7 +432,10 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
                 // Only close modal automatically if payment is approved
                 if (response.status === 'approved') {
-                    setTimeout(() => onClose(), 3000);
+                    -                     // Ya se registró la transacción en el método processPayment del servicio
+                        +                     // The transaction was already registered in the service's processPayment method
+                        console.log('Payment approved with new card. Transaction already registered.');
+                    setTimeout(() => onClose(), 4000);
                 }
             } catch (error) {
                 console.error('Payment error:', error);
@@ -348,7 +470,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
             // Update payment result
             setPaymentResult({
-                status: 'approved',//response.status, //NOTE: this is a mock response
+                status: response.status as any,
                 transactionId: response.transactionId,
                 errorMessage: response.errorMessage
             });
@@ -362,13 +484,33 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
             // Only close modal automatically if payment is approved
             if (response.status === 'approved') {
-                setTimeout(() => onClose(), 3000);
+                const transactionRequest: any = {
+                    userId: user.userId,
+                    productId: productId,
+                    quantity: cant,
+                    amount: amount,
+                    selectedPaymentMethod,
+                    cardNumber: selectedPaymentMethod?.cardNumber || '',
+                    cardholderName: selectedPaymentMethod?.cardholderName || '',
+                    expiryMonth: selectedPaymentMethod?.expiryMonth || '',
+                    expiryYear: selectedPaymentMethod?.expiryYear || '',
+                    cvv: ''
+                };
+
+                try {
+                    await paymentService.processPayment(transactionRequest);
+                    console.log('Transaction registered successfully');
+                } catch (error) {
+                    console.error('Error registering transaction:', error);
+                }
+
+                setTimeout(() => onClose(), 2000);
             }
         } catch (error) {
             console.error('Payment error with saved method:', error);
             setPaymentResult({
                 status: 'rejected',
-                errorMessage: 'Error al procesar el pago. Por favor intente nuevamente.'
+                errorMessage: 'Error processing payment. Please try again.'
             });
             setIsSubmitting(false);
         }
@@ -417,7 +559,31 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
             if (updatedStatus.status === 'pending') {
                 checkPendingPayment(transactionId);
             } else if (updatedStatus.status === 'approved') {
-                // Close modal after 3 seconds if approved
+                // Si el pago fue aprobado, registrar la transacción
+                if (user?.userId && selectedPaymentMethod) {
+                    // Llamar al endpoint de process-payment para registrar la transacción
+                    const transactionRequest: any = {
+                        userId: user.userId,
+                        productId: productId,
+                        quantity: cant,
+                        amount: amount,
+                        paymentMethodId: selectedPaymentMethodId || '',
+                        selectedPaymentMethod,
+                        cardNumber: selectedPaymentMethod?.cardNumber || '',
+                        cardholderName: selectedPaymentMethod?.cardholderName || '',
+                        expiryMonth: selectedPaymentMethod?.expiryMonth || '',
+                        expiryYear: selectedPaymentMethod?.expiryYear || '',
+                        cvv: ''
+                    };
+
+                    try {
+                        await paymentService.processPayment(transactionRequest);
+                    } catch (error) {
+                        console.error('Error registering transaction after status change:', error);
+                    }
+                }
+
+                // Close modal after approved
                 setTimeout(() => onClose(), 3000);
             }
         } catch (error) {
@@ -451,33 +617,12 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
             closeAfterTransition
         >
             <Fade in={open}>
-                <Box sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: { xs: '90%', sm: 360 },
-                    bgcolor: 'background.paper',
-                    borderRadius: 4,
-                    boxShadow: 24,
-                    p: 3,
-                    outline: 'none',
-                    maxHeight: '90vh',
-                    overflowY: 'auto'
-                }}>
+                <Box sx={getModalBoxStyles()}>
                     <Typography id="payment-modal-title" variant="h6" component="h2" align="center" gutterBottom>
                         {showPaymentForm ? 'Credit Card Payment' : 'Payment Summary'}
                     </Typography>
                     <Typography
-                        sx={{
-                            bgcolor: 'rgba(33, 150, 243, 0.1)',
-                            borderRadius: 2,
-                            padding: 1,
-                            color: '#0d47a1',
-                            border: '1px solid rgba(33, 150, 243, 0.3)',
-                            fontWeight: 'medium',
-                            mb: 2
-                        }}
+                        sx={getProductInfoStyles()}
                         variant="body2"
                         component="p"
                         align="center"
@@ -499,20 +644,12 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                         onAddNewCard={handleAddNewCard}
                                     />
 
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5, mb: 0.5 }}>
+                                    <Box sx={getPayButtonContainerStyles()}>
                                         <Button
                                             variant="contained"
                                             onClick={handlePayWithSavedMethod}
                                             disabled={!selectedPaymentMethodId || isSubmitting}
-                                            sx={{
-                                                py: 1,
-                                                bgcolor: '#2196f3',
-                                                '&:hover': { bgcolor: '#1976d2' },
-                                                borderRadius: 2,
-                                                textTransform: 'none',
-                                                fontWeight: 'bold',
-                                                minWidth: '180px'
-                                            }}
+                                            sx={getPayButtonStyles()}
                                         >
                                             {isSubmitting ? 'Processing...' : 'PAY WITH THIS CARD'}
                                         </Button>
@@ -532,48 +669,32 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                     {showPaymentForm && !showNewCardForm ? (
                         <Paper
                             elevation={3}
-                            sx={{
-                                bgcolor: '#2196f3',
-                                color: 'white',
-                                borderRadius: 2,
-                                p: 2,
-                                mb: 3,
-                                position: 'relative',
-                                height: 160,
-                                backgroundImage: 'linear-gradient(135deg, #2196f3 0%, #0d47a1 100%)',
-                            }}
+                            sx={getCardVisualStyles()}
                         >
-                            <Box sx={{ position: 'absolute', top: 15, right: 15 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box sx={getCardChipContainerStyles()}>
+                                <Box sx={getCardChipStyles()}>
                                     <Box
                                         component="span"
-                                        sx={{
-                                            width: 30,
-                                            height: 20,
-                                            borderRadius: 1,
-                                            bgcolor: '#f5f5f5',
-                                            mr: 1,
-                                            display: 'inline-block',
-                                        }}
+                                        sx={getCardChipBoxStyles()}
                                     />
                                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                                        <Box component="span" sx={{ fontSize: 18 }}>))</Box>
+                                        <Box component="span" sx={getCardWaveStyles()}>))</Box>
                                     </Typography>
                                 </Box>
                             </Box>
 
                             <Box sx={{ mt: 5 }}>
-                                <Typography variant="body1" sx={{ letterSpacing: 2, mb: 2, fontFamily: 'monospace', fontSize: '1.1rem' }}>
+                                <Typography variant="body1" sx={getCardNumberStyles()}>
                                     {formatDisplayCardNumber()}
                                 </Typography>
 
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                    <Typography variant="body2" sx={{ textTransform: 'uppercase', opacity: 0.8 }}>
+                                <Box sx={getCardInfoContainerStyles()}>
+                                    <Typography variant="body2" sx={getCardholderNameStyles()}>
                                         {selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0
                                             ? selectedPaymentMethod.cardholderName
                                             : (cardData.cardholderName || 'CARDHOLDER NAME')}
                                     </Typography>
-                                    <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                                    <Typography variant="body2" sx={getCardExpiryStyles()}>
                                         {selectedPaymentMethod && !showNewCardForm && savedPaymentMethods.length > 0
                                             ? `${selectedPaymentMethod.expiryMonth}/${selectedPaymentMethod.expiryYear}`
                                             : `${cardData.expiryMonth ? cardData.expiryMonth.padStart(2, '0') : 'MM'}/${cardData.expiryYear || 'YY'}`}
@@ -589,14 +710,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                         : "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png")
                                     : "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png"}
                                 alt="chip"
-                                sx={{
-                                    position: 'absolute',
-                                    top: 15,
-                                    left: 15,
-                                    width: 40,
-                                    height: 25,
-                                    objectFit: 'contain',
-                                }}
+                                sx={getCardBrandImageStyles()}
                             />
                         </Paper>) : (!showPaymentForm && <PaymentSummary
                             status={paymentResult.status}
@@ -609,7 +723,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                         <Box component="form" onSubmit={handleSubmit}>
                             <Grid container spacing={2}>
                                 <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
-                                    <Box sx={{ gap: 2 }}>
+                                    <Box sx={getFormContainerStyles()}>
                                         <TextField
                                             style={{ width: '100%' }}
                                             label="CARD NUMBER"
@@ -651,7 +765,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                 </Grid>
 
                                 <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Box sx={getExpiryContainerStyles()}>
                                         <TextField
                                             label="MM"
                                             variant="outlined"
@@ -659,7 +773,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                             onChange={handleChange('expiryMonth')}
                                             error={!!errors.expiryMonth}
                                             disabled={isSubmitting}
-                                            sx={{ width: '50%', py: 0 }}
+                                            sx={getExpiryMonthStyles()}
                                             InputProps={{
                                                 startAdornment: (
                                                     <InputAdornment position="start">
@@ -715,20 +829,12 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
 
                                 <Grid
                                     size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
-                                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', alignContent: 'flex-end' }}>
+                                    <Box sx={getButtonContainerStyles()}>
                                         <Button
                                             type="submit"
                                             variant="contained"
                                             disabled={isSubmitting}
-                                            sx={{
-                                                py: 1,
-                                                bgcolor: '#2196f3',
-                                                '&:hover': { bgcolor: '#1976d2' },
-                                                borderRadius: 2,
-                                                textTransform: 'none',
-                                                fontWeight: 'bold',
-                                                minWidth: '120px'
-                                            }}
+                                            sx={getSubmitButtonStyles()}
                                         >
                                             {isSubmitting ? 'Processing...' : 'PAY NOW'}
                                         </Button>
@@ -736,17 +842,7 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                                             variant="outlined"
                                             onClick={savedPaymentMethods.length > 0 ? () => setShowNewCardForm(false) : onClose}
                                             disabled={isSubmitting}
-                                            sx={{
-                                                py: 1,
-                                                borderRadius: 2,
-                                                textTransform: 'none',
-                                                color: '#757575',
-                                                borderColor: '#bdbdbd',
-                                                '&:hover': {
-                                                    borderColor: '#757575',
-                                                },
-                                                minWidth: '100px'
-                                            }}
+                                            sx={getCancelButtonStyles()}
                                         >
                                             {savedPaymentMethods.length > 0 ? 'BACK' : 'CANCEL'}
                                         </Button>
@@ -755,21 +851,11 @@ export const PaymentCardModal = ({ open, onClose, productName, amount, cant, pro
                             </Grid>
                         </Box>
                     ) : (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Box sx={getCloseButtonContainerStyles()}>
                             <Button
                                 variant="outlined"
                                 onClick={onClose}
-                                sx={{
-                                    py: 1,
-                                    borderRadius: 2,
-                                    textTransform: 'none',
-                                    color: '#757575',
-                                    borderColor: '#bdbdbd',
-                                    '&:hover': {
-                                        borderColor: '#757575',
-                                    },
-                                    minWidth: '120px'
-                                }}
+                                sx={getCloseButtonStyles()}
                             >
                                 {paymentResult.status === 'approved' ? 'CLOSE' : 'BACK'}
                             </Button>
