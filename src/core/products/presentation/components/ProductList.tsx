@@ -1,9 +1,10 @@
-import { Add as AddIcon, CameraAlt as CameraIcon, CreditCard as CreditCardIcon, InfoRounded, Inventory2Sharp, Remove as RemoveIcon } from '@mui/icons-material';
+import { Add as AddIcon, CameraAlt as CameraIcon, CreditCard as CreditCardIcon, InfoRounded, Inventory2Sharp, Remove as RemoveIcon, ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, Grid, IconButton, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import { SxProps } from '@mui/system';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useUser from '../../../../contexts/UserContext';
+import useCart from '../../../../contexts/CartContext';
 import { Notification } from '../../../../shared/feedback/Notification';
 import useSocket from '../../../../shared/hooks/useSocket';
 import { formatToLocalCurrency } from '../../../../shared/utils/currency';
@@ -195,16 +196,32 @@ const getStockIconStyles = (): SxProps => ({
     fontSize: 14
 });
 
+const getAddToCartButtonStyles = (): SxProps => ({
+    textTransform: 'none',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    py: 1.5,
+    borderRadius: 2,
+    bgcolor: '#1976D2',
+    '&:hover': {
+        bgcolor: '#1976D2'
+    },
+    flex: 1,
+    mr: 1
+});
+
 const getPayButtonStyles = (): SxProps => ({
     textTransform: 'none',
     fontWeight: 'bold',
-    fontSize: '1rem',
+    fontSize: '0.9rem',
     py: 1.5,
-    borderRadius: 8,
+    borderRadius: 2,
     bgcolor: '#4CAF50',
     '&:hover': {
         bgcolor: '#43A047'
-    }
+    },
+    flex: 1,
+    ml: 1
 });
 
 const getLoadingBoxStyles = (): SxProps => ({
@@ -232,6 +249,7 @@ const getLoadingCardContentStyles = (): SxProps => ({
 
 export const ProductList = () => {
     const { setUser } = useUser();
+    const { addToCart } = useCart();
     const [products, setProducts] = useState<Product[]>([]);
     const calculateOfferPercentage = (originalPrice: number, offerPrice: number): number => {
         return Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
@@ -517,6 +535,16 @@ export const ProductList = () => {
         setNotification(prev => ({ ...prev, open: false }));
     };
 
+    const handleAddToCart = (product: Product) => {
+        const quantity = quantities[product.productId] || 1;
+        addToCart(product, quantity);
+        setNotification({
+            open: true,
+            message: `${product.name} added to cart`,
+            severity: 'success'
+        });
+    };
+
     return (
         <>
             <Grid container spacing={4} sx={getGridContainerStyles()} >
@@ -634,19 +662,27 @@ export const ProductList = () => {
                                     </Paper>
                                 </Stack>
 
-                                <Button
-                                    fullWidth
-                                    variant="contained"
-                                    onClick={() => {
-                                        setSelectedProduct(product);
-                                        console.log('Selected product:', product);
-                                        setPaymentModalOpen(true);
-                                    }}
-                                    sx={getPayButtonStyles()}
-                                    startIcon={<CreditCardIcon />}
-                                >
-                                    Pay with credit card
-                                </Button>
+                                <Box sx={{ display: 'flex', width: '100%', mt: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<ShoppingCartIcon />}
+                                        onClick={() => handleAddToCart(product)}
+                                        sx={getAddToCartButtonStyles()}
+                                    >
+                                        Add
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<CreditCardIcon />}
+                                        onClick={() => {
+                                            setSelectedProduct(product);
+                                            setPaymentModalOpen(true);
+                                        }}
+                                        sx={getPayButtonStyles()}
+                                    >
+                                        Pay
+                                    </Button>
+                                </Box>
                             </CardContent>
                         </Card>
                     </Grid>

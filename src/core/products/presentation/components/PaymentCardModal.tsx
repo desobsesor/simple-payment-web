@@ -32,7 +32,7 @@ const getModalBoxStyles = (): SxProps => ({
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: { xs: '90%', sm: 360 },
+    width: { xs: '90%', sm: 420 },
     bgcolor: 'background.paper',
     borderRadius: 4,
     boxShadow: 24,
@@ -77,19 +77,21 @@ const getCardVisualStyles = (): SxProps => ({
     mb: 3,
     position: 'relative',
     height: 160,
-    mx: 2,
+    mx: 'auto',
+    width: '80%',
     backgroundImage: 'linear-gradient(135deg, #2196f3 0%, #0d47a1 100%)'
 });
 
 const getCardChipContainerStyles = (): SxProps => ({
     position: 'absolute',
     top: 15,
-    right: 15
+    right: 15,
 });
 
 const getCardChipStyles = (): SxProps => ({
     display: 'flex',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center',
 });
 
 const getCardChipBoxStyles = (): SxProps => ({

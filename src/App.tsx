@@ -4,6 +4,8 @@ import './App.css';
 import { ProductList } from './core/products/presentation/components/ProductList';
 import ErrorNotification from './shared/feedback/ErrorNotification';
 import { PaymentMethodProvider } from './contexts/PaymentMethodContext';
+import { CartProvider } from './contexts/CartContext';
+import { ShoppingCart } from './core/products/presentation/components/ShoppingCart';
 import { SxProps } from '@mui/system';
 
 //#region STYLES
@@ -104,32 +106,35 @@ function App() {
 
   return (
     <PaymentMethodProvider>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        color="default"
-        elevation={scrolled ? 4 : 0}
-        sx={getAppBarStyles(scrolled, headerOpacity)}
-      >
-        <Toolbar sx={getToolbarStyles(scrolled)}>
-          <Box sx={getBoxStyles(scrolled)}>
-            <Slide direction="down" in={true} mountOnEnter unmountOnExit>
-              <Typography
-                variant={scrolled ? "h6" : "h3"}
-                component="h1"
-                gutterBottom={!scrolled}
-                sx={getTypographyStyles(scrolled)}
-              >
-                Our products
-              </Typography>
-            </Slide>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Container maxWidth="xl" sx={getContainerStyles(scrolled)}>
-        <ProductList />
-        <ErrorNotification />
-      </Container>
+      <CartProvider>
+        <CssBaseline />
+        <AppBar
+          position="fixed"
+          color="default"
+          elevation={scrolled ? 4 : 0}
+          sx={getAppBarStyles(scrolled, headerOpacity)}
+        >
+          <Toolbar sx={getToolbarStyles(scrolled)}>
+            <Box sx={getBoxStyles(scrolled)}>
+              <Slide direction="down" in={true} mountOnEnter unmountOnExit>
+                <Typography
+                  variant={scrolled ? "h6" : "h3"}
+                  component="h1"
+                  gutterBottom={!scrolled}
+                  sx={getTypographyStyles(scrolled)}
+                >
+                  Our products
+                </Typography>
+              </Slide>
+            </Box>
+          </Toolbar>
+        </AppBar>
+        <Container maxWidth="xl" sx={getContainerStyles(scrolled)}>
+          <ProductList />
+          <ErrorNotification />
+          <ShoppingCart />
+        </Container>
+      </CartProvider>
     </PaymentMethodProvider >
   )
 }
