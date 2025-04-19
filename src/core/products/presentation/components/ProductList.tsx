@@ -14,6 +14,7 @@ import { PaymentCardModal } from './PaymentCardModal';
 import { ProductImageModal } from './ProductImageModal';
 import { ProductInfoModal } from './ProductInfoModal';
 import { QuantityEditPopover } from './QuantityEditPopover';
+import config from '../../../../config/app.config';
 
 //#region STYLES
 
@@ -41,8 +42,38 @@ const getCardStyles = (): SxProps => ({
     overflow: 'hidden',
     transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
     bgcolor: '#FFFFFF',
+    position: 'relative',
     maxWidth: 280,
-    mx: 'auto'
+    mx: 'auto',
+});
+
+const getOfferBadgeStyles = (): SxProps => ({
+    position: 'absolute',
+    top: 50,
+    right: 10,
+    bgcolor: '#FF5722',
+    color: 'white',
+    borderRadius: '50%',
+    width: 100,
+    height: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    boxShadow: 3,
+    zIndex: 999
+});
+
+const getOfferPercentageStyles = (): SxProps => ({
+    mt: 1,
+    fontSize: '2rem',
+    fontWeight: 'bold',
+    lineHeight: 1
+});
+
+const getOfferTimeStyles = (): SxProps => ({
+    fontSize: '0.7rem',
+    marginTop: 1.5
 });
 
 const getLoadingCardStyles = (): SxProps => ({
@@ -202,6 +233,16 @@ const getLoadingCardContentStyles = (): SxProps => ({
 export const ProductList = () => {
     const { setUser } = useUser();
     const [products, setProducts] = useState<Product[]>([]);
+    const calculateOfferPercentage = (originalPrice: number, offerPrice: number): number => {
+        return Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
+    };
+    const calculateTimeLeft = (endDate: Date): string => {
+        const now = new Date();
+        const diff = endDate.getTime() - now.getTime();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        return `${hours}h ${minutes}m`;
+    };
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
@@ -225,7 +266,7 @@ export const ProductList = () => {
         on,
         off
     } = useSocket({
-        url: 'http://192.168.101.72:3000', //config.API_URL,
+        url: config.API_URL,
         autoConnect: false,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
@@ -329,7 +370,6 @@ export const ProductList = () => {
     useEffect(() => {
         if (isConnected && socket) {
             // Register connection/disconnection events for debugging only when connected
-            console.log('Registering event handlers for connected socket');
 
             on('connect', () => {
                 console.log('Socket connected with ID:', socket?.id);
@@ -479,9 +519,7 @@ export const ProductList = () => {
 
     return (
         <>
-            {/* <h4 style={{ textAlign: 'center', color: '#4CAF50' }}>Socket Connection: {isConnected ? 'Connected' : 'Disconnected'}</h4>*/}
             <Grid container spacing={4} sx={getGridContainerStyles()} >
-
                 {products.map((product) => (
                     <Grid key={product.productId} sx={getGridItemStyles()} >
                         <Card
@@ -500,6 +538,12 @@ export const ProductList = () => {
                                 >
                                     <InfoRounded fontSize="small" />
                                 </IconButton>
+                                {product.offers && product.offers.map((offer: any) => (
+                                    <Box sx={getOfferBadgeStyles()}>
+                                        <Typography sx={getOfferPercentageStyles()}>{Number(offer.discountPercentage).toPrecision()}%</Typography>
+                                        <Typography sx={getOfferTimeStyles()}>{offer.description || '-10 day'}</Typography>
+                                    </Box>
+                                ))}
                                 <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                                     {product.name}
                                 </Typography>
