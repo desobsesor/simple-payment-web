@@ -156,6 +156,11 @@ export const QuantityEditPopover = ({
                     size="small"
                     value={editingQuantity}
                     onChange={handleQuantityInputChange}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            handleQuantitySubmit();
+                        }
+                    }}
                     autoFocus
                     inputProps={{
                         min: 1,
