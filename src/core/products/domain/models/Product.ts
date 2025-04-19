@@ -7,4 +7,5 @@ export interface Product {
     sku: string;
     category: string;
     stock: number;
+    offers: any
 }
