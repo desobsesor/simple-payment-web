@@ -29,10 +29,19 @@ Simple Payment Web Application.  This app allows you to operate the payment logi
 ## Preview 📸
 
 <p align="center">
-  <img src="./public/screenshot.png" alt="Database Schema" width="800"/>
+  <img src="./public/screenshot-min.png" alt="Database Schema" width="800"/>
 </p>
 <p align="center">
-  <img src="./public/screenshot_3.png" alt="Database Schema" width="800"/>
+  <img src="./public/screenshot_2-min.png" alt="Database Schema" width="800"/>
+</p>
+<p align="center">
+  <img src="./public/screenshot_3-min.png" alt="Database Schema" width="800"/>
+</p>
+<p align="center">
+  <img src="./public/screenshot_4-min.png" alt="Database Schema" width="800"/>
+</p>
+<p align="center">
+  <img src="./public/screenshot_5-min.png" alt="Database Schema" width="800"/>
 </p>
 
 ## Project setup ✅
