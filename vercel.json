@@ -1,0 +1,45 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@vercel/static-build"
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ],
+    "env": {
+        "VITE_API_URL": "https://simple-payment-api.cds.net.co"
+    },
+    "framework": "vite",
+    "github": {
+        "silent": true
+    },
+    "images": {
+        "sizes": [
+            640,
+            750,
+            828,
+            1080,
+            1200
+        ],
+        "domains": [
+            "simple-payment.cds.net.co"
+        ]
+    },
+    "headers": [
+        {
+            "source": "/static/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                }
+            ]
+        }
+    ]
+}
